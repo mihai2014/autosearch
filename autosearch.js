@@ -23,7 +23,6 @@ function labelBlack(label,string){
     label.innerHTML = string;
 }
 
-
 function setAutoSearch(inputDiv){
     var showDivWidth = "140px";
     var showDivHeight = "100px";     //160px fit for 8 rows
@@ -50,6 +49,16 @@ function setAutoSearch(inputDiv){
     }
 
     var link = hidden.value; 
+
+    //setting hidden inputs for retrieving selections
+    var selectedId = document.createElement("input");
+    selectedId.type = "hidden";
+    selectedId.name = "id"
+    var selectedItem = document.createElement("input");  
+    selectedItem.type = "hidden";
+    selectedItem.name = "item";
+    inputDiv.appendChild(selectedId);
+    inputDiv.appendChild(selectedItem);
 
     //setting for absolute positioning of showDiv child (parent must not be static)
     inputDiv.style.position = "relative";
@@ -109,6 +118,9 @@ function setAutoSearch(inputDiv){
 	selectedName = row.name_str;
 	selectedRowNr = rowNr;
 
+        selectedId.value = row.id;
+        selectedItem.value = row.name_str;
+
 	autocompleteInput(); 
 	showDiv.style.display = "none";
     }
@@ -136,10 +148,11 @@ function setAutoSearch(inputDiv){
         selectedRowId = newRow.id;
         selectedName = newRow.name_str;
         selectedRowNr = newPos;
-/*
+
+        selectedId.value = newRow.id;
+        selectedItem.value = newRow.name_str;
 
 
-*/
 	//auto adjust scroll position to fit selection in visible area
 	//--------------------------------------------------------------------------------------------------------
         var rowHeight = newRow.scrollHeight;
@@ -196,6 +209,10 @@ function setAutoSearch(inputDiv){
             selectedRow = rowFocusMouse;
             selectedRowId = rowFocusMouse.id;
             selectedName = rowFocusMouse.name_str;
+
+	    selectedId.value = rowFocusMouse.id;
+	    selectedItem.value = rowFocusMouse.name_str;
+
             //selectedRowNr = rowNr;
             autocompleteInput();
 	}
