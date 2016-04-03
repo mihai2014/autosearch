@@ -8,7 +8,7 @@ function isThere(name,dictList){
         if(equalIgnoreCase(name,dictList[i].name))
             return dictList[i].id;
     }
-    return -1;
+    return 0;
 }
 function labelRed(label,string){
     //if(id == "" || id == null) return;
@@ -53,12 +53,16 @@ function setAutoSearch(inputDiv){
     //setting hidden inputs for retrieving selections
     var selectedId = document.createElement("input");
     selectedId.type = "hidden";
-    selectedId.name = "id"
+    selectedId.name = "id";
+    selectedId.id = input.id + "_id";
+    selectedId.value = "0";
     var selectedItem = document.createElement("input");  
     selectedItem.type = "hidden";
     selectedItem.name = "item";
+    selectedItem.id = input.id + "_item";
     inputDiv.appendChild(selectedId);
     inputDiv.appendChild(selectedItem);
+
 
     //setting for absolute positioning of showDiv child (parent must not be static)
     inputDiv.style.position = "relative";
@@ -80,12 +84,12 @@ function setAutoSearch(inputDiv){
 
     inputDiv.appendChild(showDiv)
 
+    var timeout = null;
     var rowFocusMouse = null;
 
-    var selectedRow;
-    var selectedIdRow = -1;
-    var selectedRowNr = -1;
-    var selectedName = "";
+    var selectedRow = null;
+    var selectedRowNr = null;
+    var list = null;
 
     //this could be superfluu
     function detectSelectedRow(){
@@ -104,7 +108,7 @@ function setAutoSearch(inputDiv){
     }
 
     function autocompleteInput(){
-	input.value = selectedName;  
+	input.value = selectedRow.name_str;  
     }
 
     function selectByClick(row,rowNr){ 
@@ -114,8 +118,6 @@ function setAutoSearch(inputDiv){
 	//select new row
 	row.style.backgroundColor = "green";
 	selectedRow = row;
-	selectedRowId = row.id;
-	selectedName = row.name_str;
 	selectedRowNr = rowNr;
 
         selectedId.value = row.id;
@@ -145,8 +147,6 @@ function setAutoSearch(inputDiv){
 	}
         newRow.style.backgroundColor = "green";
         selectedRow = newRow;
-        selectedRowId = newRow.id;
-        selectedName = newRow.name_str;
         selectedRowNr = newPos;
 
         selectedId.value = newRow.id;
@@ -191,11 +191,21 @@ function setAutoSearch(inputDiv){
                 break;
 	    //enter
 	    case 13:
-		showDiv.style.display = "none";
+        	selectedId.value = selectedRow.id; 
+        	selectedItem.value = selectedRow.name_str;
 		autocompleteInput();
+		showDiv.style.display = "none";
 		break
 	    //esc
             case 27:
+		showDiv.style.display = "none";
+		break;
+	    //tab
+	    case 9:
+		//getting id from autocomplete list
+		id = isThere(input.value,list);
+		selectedId.value = id;
+		selectedItem.value = input.value;
 		showDiv.style.display = "none";
 		break;
         }
@@ -203,21 +213,16 @@ function setAutoSearch(inputDiv){
 
     //lost focus
     //onblur action is before click on row, so click selection could not happen
-    //instead, we make selection here
     input.onblur = function(){
-	if (rowFocusMouse){
-            selectedRow = rowFocusMouse;
-            selectedRowId = rowFocusMouse.id;
-            selectedName = rowFocusMouse.name_str;
-
-	    selectedId.value = rowFocusMouse.id;
-	    selectedItem.value = rowFocusMouse.name_str;
-
-            //selectedRowNr = rowNr;
-            autocompleteInput();
+	function hide(){
+	    showDiv.style.display = "none";
 	}
+	timeout = setTimeout(hide, 300);
+    }
 
-	showDiv.style.display = "none";
+    //onclick scrollbar not triggered  !!!!
+    showDiv.onfocus = function(){
+	clearTimeout(timeout);
     }
 
     //back
@@ -271,23 +276,23 @@ function setAutoSearch(inputDiv){
 	if(i==0){
             row.style.backgroundColor = "green";
 	    selectedRow = row;
-	    selectedIdRow = id;
 	    selectedRowNr = i;
-	    selectedName = name_str;
 	}
     }
 
     function success(response){
+	list = response;
 	if(response.length > 0){
 	    showDiv.style.display = "block";
-	    //reset...
-	    showDiv.innerHTML = "";
+	    showDiv.innerHTML = "";  //reset...
 
 	    labelBlack(labelInput,inputName);
 	}else{
 	    showDiv.style.display = "none";
 
 	    labelRed(labelInput,inputName+" nou!");
+	    selectedId.value = "0";
+	    selectedItem.value = input.value;
 	}
 
 	var max = 0;
@@ -307,9 +312,9 @@ function setAutoSearch(inputDiv){
 
     input.onkeyup = function(e){
 	var key = input.value;
-	//empty input text or //tab
-	if (key == "" ){
-	    showDiv.style.display = "none";
+	//empty input text
+	if (key == ""){ 
+	    showDiv.style.display = "none"; 
 	    return;
 	}
 	//arrow up and down, esc, enter
