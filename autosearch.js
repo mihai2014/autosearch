@@ -2,6 +2,7 @@ function equalIgnoreCase(string1,string2){
     var areEqual = string1.toUpperCase() === string2.toUpperCase();
     return areEqual;
 }
+
 function isThere(name,dictList){
     for(var i=0; i<dictList.length; i++) {
         //if (name == dictList[i].name)
@@ -10,21 +11,9 @@ function isThere(name,dictList){
     }
     return 0;
 }
-function labelRed(label,string){
-    //if(id == "" || id == null) return;
-    //var label = document.getElementById(id);
-    label.style.color = "red";
-    label.innerHTML = string;
-}
-function labelBlack(label,string){
-    //if(id == "" || id == null) return;
-    //var label = document.getElementById(id);
-    label.style.color = "black";
-    label.innerHTML = string;
-}
 
 function setAutoSearch(inputDiv){
-    var showDivWidth = "140px";
+    var showDivWidth = "175px";
     var showDivHeight = "100px";     //160px fit for 8 rows
     var maxRows = 8;
 
@@ -91,7 +80,7 @@ function setAutoSearch(inputDiv){
     var selectedRowNr = null;
     var list = null;
 
-    //this could be superfluu
+    //this could be redundant
     function detectSelectedRow(){
         var children = showDiv.childNodes;
         //identify already selected row
@@ -104,15 +93,27 @@ function setAutoSearch(inputDiv){
                 }
             }
         }
-	return none;
+	return null;
     }
 
     function autocompleteInput(){
 	input.value = selectedRow.name_str;  
     }
-
-    function selectByClick(row,rowNr){ 
+/*
+    function getLabelRow(row){
+	var children = row.childNodes;	
+	for(i=0; i<children.length; i++){
+	    var child = children[i];
+	    if(child.tagName == "SPAN"){
+		return child.id;
+	    }
+	}
+	return null;
+    }
+*/
+    function selectByClick(row,rowNr){
 	//var selectedRow = detectSelectedRow();
+
 	selectedRow.style.backgroundColor = "white";
 
 	//select new row
@@ -204,7 +205,7 @@ function setAutoSearch(inputDiv){
 	    case 9:
 		//getting id from autocomplete list
 		id = isThere(input.value,list);
-		selectedId.value = id;
+		selectedId.value = id; 
 		selectedItem.value = input.value;
 		showDiv.style.display = "none";
 		break;
@@ -220,7 +221,6 @@ function setAutoSearch(inputDiv){
 	timeout = setTimeout(hide, 300);
     }
 
-    //onclick scrollbar not triggered  !!!!
     showDiv.onfocus = function(){
 	clearTimeout(timeout);
     }
@@ -235,9 +235,8 @@ function setAutoSearch(inputDiv){
             return;
         }
         
-        var url = link + key;
-        var req = new GET(url,success,"json");
-        req.go();
+        var url = link;
+	var req = new REQ(url,key,success);
 	req = null;
     }
 
@@ -259,17 +258,19 @@ function setAutoSearch(inputDiv){
 	    selectByClick(this,i);
 	}
 
-        //for different coloring text
+        //var text = document.createTextNode(name_str);
+        //row.appendChild(text);
+
+	//different coloring text
         var l = input.value.length;
 	var part1 = name_str.substring(0, l);
 	var part2 = name_str.substring(l, name_str.length);
-	name2 = part1 + "<span style='color:red '>" + part2 + "</span>";	
+	name = part1 + "<span style='color:red '>" + part2 + "</span>";	
+	//name = part1 + "<span " + "id='"+ name_str + "' style='color:red '>" + part2 + "</span>";
 
 	row.id = id;
 	row.name_str = name_str;
-	//var text = document.createTextNode(name);
-	//row.appendChild(text);
-	row.innerHTML = name2;  
+	row.innerHTML = name;  
 	showDiv.appendChild(row);
 
 	//default select 1st row
@@ -280,17 +281,32 @@ function setAutoSearch(inputDiv){
 	}
     }
 
-    function success(response){
+    //modify here  ...
+    function serverSimulation(response,key){ 
+	var selectedRows = [];
+	for(var i=0; i<response.length; i++){
+	    var row 	= response[i];
+	    var city 	= row['city'];
+	    var re 	= new RegExp('^'+key, 'i');
+	    var found 	= city.match(re);
+	    if(found != null)  	
+		    selectedRows.push(row);
+	}
+	
+	return selectedRows;
+    }
+    
+    function success(response,key){
+	var response = JSON.parse(response);
+	
+	response = serverSimulation(response,key);
+
 	list = response;
 	if(response.length > 0){
 	    showDiv.style.display = "block";
 	    showDiv.innerHTML = "";  //reset...
-
-	    labelBlack(labelInput,inputName);
 	}else{
 	    showDiv.style.display = "none";
-
-	    labelRed(labelInput,inputName+" nou!");
 	    selectedId.value = "0";
 	    selectedItem.value = input.value;
 	}
@@ -300,11 +316,12 @@ function setAutoSearch(inputDiv){
 	    max++;
 	    var row     = response[i];
 	    var id 	= row['id'];
-	    var name 	= row['name'];
-	    var label 	= row['label'];
+	    var city 	= row['city'];
+	    var state    = row['state'];
+	    var population = row['population'];
 	    //...and refresh
-	    newRow(id,name,i);
-	    if(max == maxRows) break;
+	    newRow(id,city,i);
+	    //if(max == maxRows) break;
 	}
 
     }
@@ -312,6 +329,7 @@ function setAutoSearch(inputDiv){
 
     input.onkeyup = function(e){
 	var key = input.value;
+
 	//empty input text
 	if (key == ""){ 
 	    showDiv.style.display = "none"; 
@@ -321,9 +339,8 @@ function setAutoSearch(inputDiv){
 	if(e.keyCode == 38 || e.keyCode == 40 || e.keyCode == 27 || e.keyCode == 13){
 	    return;
 	}
-	var url = link + key; 
-	var req = new GET(url,success,"json"); 
-	req.go();
+	var url = link; 
+	var req = new REQ(url,key,success);
 	req = null;
     }
 
@@ -331,10 +348,10 @@ function setAutoSearch(inputDiv){
 
 function initAutosearch(){
     //set all autosearch inputs
-    var list = document.getElementsByClassName("autosearch");
+    var autoList = document.getElementsByClassName("autosearch");
 
-    for (j = 0; j < list.length; j++) {
-        var autosearch = list[j];
+    for (j = 0; j < autoList.length; j++) {
+        var autosearch = autoList[j];
         setAutoSearch(autosearch);
     }
 }

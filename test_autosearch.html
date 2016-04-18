@@ -2,17 +2,24 @@
 <html>
 <head>
  <title>Test autosearch</title>
- <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
+ <meta content="text/html; charset=utf-8" http-equiv="content-type">
+ 
  <script type="text/javascript" src="xhr.js"></script>
  <script type="text/javascript" src="autosearch.js"></script>
 </head>
+
 <body>
+<p>
+Input a US city in the input below:
+</p>
   <div class="autosearch">
-    <input type="hidden" name="url" value="/server/get_data/?key=">
-    <input type="text" id="Something" size="18">
+    <input type="hidden" name="url" value="cities.json">
+    <input type="text" id="Something" size="25">
   </div>
 </body>
+
 <script>
     initAutosearch();
+    
 </script>
 </html>  
